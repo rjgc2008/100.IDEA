@@ -20,9 +20,18 @@ import java.util.Date;
 /**
  * @author Tianyiyun
  */
-class Statistic {
-    public void StatisticTimeWay(String urlStr, String fileNameStr) throws IOException, InterruptedException, ParseException {
+class Statistic extends Thread {
 
+    String urlStr = "";
+    String fileNameStr = "";
+
+    public Statistic(String urlStr, String fileNameStr) {
+        this.urlStr = urlStr;
+        this.fileNameStr = fileNameStr;
+    }
+
+    @Override
+    public void run() {
         //标识符：用于判断是否将时间写入文件
         String flagStr = "";
         //标识符：用于若网络获取文件出现异常，则进行重试
@@ -36,15 +45,22 @@ class Statistic {
         //拼接开始时间字符串
         String startTimeStr = datePrefixStr + "06:00:00";
         //拼接结束时间字符串
-        String endTimeStr = datePrefixStr + "21:00:00";
+        String endTimeStr = datePrefixStr + "22:00:00";
 
         SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        //获取开始时间Long类型
-        long beginTimeLong = ymdhmsSDF.parse(startTimeStr).getTime();
-        //获取线束时间Long类型
-        long endTimeLong = ymdhmsSDF.parse(endTimeStr).getTime();
-        //获取当前时间Long类型
-        long currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(currentDate)).getTime();
+        long beginTimeLong = 0;
+        long endTimeLong = 0;
+        long currentTimeLong = 0;
+        try {
+            //获取开始时间Long类型
+            beginTimeLong = ymdhmsSDF.parse(startTimeStr).getTime();
+            //获取线束时间Long类型
+            endTimeLong = ymdhmsSDF.parse(endTimeStr).getTime();
+            //获取当前时间Long类型
+            currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(currentDate)).getTime();
+        } catch (ParseException e) {
+            System.out.println("ERROR: Exception");
+        }
 
         SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
         //写入文件里的内容的字符串前缀
@@ -69,7 +85,11 @@ class Statistic {
                     flag = false;
                 } catch (Exception e) {
                     System.out.println("debug: 运行异常");
-                    sleep(30000);
+                    try {
+                        sleep(30000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
 //                调试语句
@@ -95,11 +115,15 @@ class Statistic {
                     if (!writeString.equals(flagStr)) {
                         //标志位：更新
                         flagStr = writeString;
-                        fileVar = new File(fileNameStr);
-                        fileWriterVar = new FileWriter(fileVar.getName(), true);
-                        bufferWriterVar = new BufferedWriter(fileWriterVar);
-                        bufferWriterVar.write(writeString + "\n");
-                        bufferWriterVar.close();
+                        try {
+                            fileVar = new File(fileNameStr);
+                            fileWriterVar = new FileWriter(fileVar.getName(), true);
+                            bufferWriterVar = new BufferedWriter(fileWriterVar);
+                            bufferWriterVar.write(writeString + "\n");
+                            bufferWriterVar.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         System.out.println("Debug flagInt = " + flagStr);
                         break;
                     }
@@ -108,16 +132,24 @@ class Statistic {
                 }
             }
             //更新当前时间变量
-            currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(new Date())).getTime();
+            try {
+                currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(new Date())).getTime();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
             System.out.println("Debug: print");
-            sleep(60000);
+            try {
+                sleep(60000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
 
 public class StatisticTime {
     public static void main(String[] args) throws InterruptedException, ParseException, IOException {
-        Statistic statisticObject = new Statistic();
-        statisticObject.StatisticTimeWay("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt");
+        new Statistic("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt").start();
+        new Statistic("http://szxing-fwc.icitymobile.com/line/10000585", "138.txt").start();
     }
 }
