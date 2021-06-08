@@ -49,13 +49,22 @@ public class StatisticTime {
         SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd E ");
         //写入文件里的内容的字符串前缀
         String dateStr3 = sdf3.format(dateNow2);
+        Document doc = null;
+        //标志位，如果执行出现异常，则进行重度
+        boolean flag = true;
+
+        Element content = null;
+        Elements links = null;
+        Element link = null;
+        String[] arr = null;
+
+        File file = null;
+        FileWriter fileWriterVar = null;
+        BufferedWriter bufferWriterVar = null;
 
         while (currentTimeLong > beginTimeLong && currentTimeLong < endTimeLong) {
 
-            Document doc = null;
-            //标志位，如果执行出现异常，则进行重度
-            boolean flag = true;
-            while (flag){
+            while (flag) {
                 try {
                     //网络获取html文件
                     doc = Jsoup.connect("http://szxing-fwc.icitymobile.com/line/10003091").get();
@@ -70,16 +79,16 @@ public class StatisticTime {
 //            从本地获取文件
 //            File input = new File("D:\\200WYJ\\999.tmp\\013.html\\input.html");
 //            Document doc = Jsoup.parse(input, "UTF-8", "");
-            Element content = doc.getElementById("content");
-            Elements links = content.getElementsByTag("a");
+            content = doc.getElementById("content");
+            links = content.getElementsByTag("a");
 
             /**
              * 循环填充站点、到站时间信息
              */
-            for (int i = 0; i < links.size(); i++) {
-                Element link = links.get(i);
+            for (int i = 0, length = links.size(); i < length; i++) {
+                link = links.get(i);
                 String linkText = link.text();
-                String[] arr = linkText.split("\\s");
+                arr = linkText.split("\\s");
                 if (arr[0].equals("塘北小区") && arr.length > 1) {
                     //拼接字符串，本次查询到的入站时间点
                     String writeString = dateStr3 + arr[1];
@@ -88,9 +97,9 @@ public class StatisticTime {
                      */
                     if (!writeString.equals(flagStr)) {
                         flagStr = writeString;
-                        File file = new File(".\\1.txt");
-                        FileWriter fileWriterVar = new FileWriter(file.getName(), true);
-                        BufferedWriter bufferWriterVar = new BufferedWriter(fileWriterVar);
+                        file = new File(".\\1.txt");
+                        fileWriterVar = new FileWriter(file.getName(), true);
+                        bufferWriterVar = new BufferedWriter(fileWriterVar);
                         bufferWriterVar.write(writeString + "\n");
                         bufferWriterVar.close();
                         System.out.println("Debug flagInt = " + flagStr);
