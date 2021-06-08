@@ -20,54 +20,52 @@ import java.util.Date;
 /**
  * @author Tianyiyun
  */
-public class StatisticTime {
-    public static void main(String[] args) throws IOException, InterruptedException, ParseException {
-        //标识符：判断是否将时间写入文件
+class Statistic {
+    public void StatisticTimeWay(String urlStr, String fileNameStr) throws IOException, InterruptedException, ParseException {
+
+        //标识符：用于判断是否将时间写入文件
         String flagStr = "";
-
-        /**
-         * 拼接：循环的开始时间和结束时间
-         */
-        //获取当前时间
-        Date dateNow2 = new Date();
-        SimpleDateFormat sdf4 = new SimpleDateFormat("yyyy-MM-dd ");
-        //获取开始时间、结束时间拼接字符串前缀
-        String dateStr4 = sdf4.format(dateNow2);
-        //拼接开始时间字符串
-        String beginTimeStr = dateStr4 + "06:00:00";
-        //拼接结束时间字符串
-        String endTimeStr = dateStr4 + "21:00:00";
-
-        SimpleDateFormat sdf5 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        //获取开始时间Long类型
-        long beginTimeLong = sdf5.parse(beginTimeStr).getTime();
-        //获取线束时间Long类型
-        long endTimeLong = sdf5.parse(endTimeStr).getTime();
-        //获取当前时间Long类型
-        long currentTimeLong = sdf5.parse(sdf5.format(dateNow2)).getTime();
-
-        SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd E ");
-        //写入文件里的内容的字符串前缀
-        String dateStr3 = sdf3.format(dateNow2);
-        Document doc = null;
-        //标志位，如果执行出现异常，则进行重度
+        //标识符：用于若网络获取文件出现异常，则进行重试
         boolean flag = true;
 
-        Element content = null;
-        Elements links = null;
-        Element link = null;
-        String[] arr = null;
+        //获取当前日期时间
+        Date currentDate = new Date();
+        SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
+        //获取开始时间、结束时间拼接字符串前缀
+        String datePrefixStr = ymdSDF.format(currentDate);
+        //拼接开始时间字符串
+        String startTimeStr = datePrefixStr + "06:00:00";
+        //拼接结束时间字符串
+        String endTimeStr = datePrefixStr + "21:00:00";
 
-        File file = null;
+        SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        //获取开始时间Long类型
+        long beginTimeLong = ymdhmsSDF.parse(startTimeStr).getTime();
+        //获取线束时间Long类型
+        long endTimeLong = ymdhmsSDF.parse(endTimeStr).getTime();
+        //获取当前时间Long类型
+        long currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(currentDate)).getTime();
+
+        SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
+        //写入文件里的内容的字符串前缀
+        String dateFilePrefixStr = ymdeSDF.format(currentDate);
+        Document doc = null;
+
+        Element contentElement = null;
+        Elements linksElements = null;
+        Element linkElement = null;
+        String[] arrArray = null;
+
+        File fileVar = null;
         FileWriter fileWriterVar = null;
         BufferedWriter bufferWriterVar = null;
 
         while (currentTimeLong > beginTimeLong && currentTimeLong < endTimeLong) {
-
             while (flag) {
                 try {
                     //网络获取html文件
-                    doc = Jsoup.connect("http://szxing-fwc.icitymobile.com/line/10003091").get();
+//                    doc = Jsoup.connect("http://szxing-fwc.icitymobile.com/line/10003091").get();
+                    doc = Jsoup.connect(urlStr).get();
                     flag = false;
                 } catch (Exception e) {
                     System.out.println("debug: 运行异常");
@@ -79,38 +77,47 @@ public class StatisticTime {
 //            从本地获取文件
 //            File input = new File("D:\\200WYJ\\999.tmp\\013.html\\input.html");
 //            Document doc = Jsoup.parse(input, "UTF-8", "");
-            content = doc.getElementById("content");
-            links = content.getElementsByTag("a");
-
+            contentElement = doc.getElementById("content");
+            linksElements = contentElement.getElementsByTag("a");
             /**
              * 循环填充站点、到站时间信息
              */
-            for (int i = 0, length = links.size(); i < length; i++) {
-                link = links.get(i);
-                String linkText = link.text();
-                arr = linkText.split("\\s");
-                if (arr[0].equals("塘北小区") && arr.length > 1) {
+            for (int i = 0, length = linksElements.size(); i < length; i++) {
+                linkElement = linksElements.get(i);
+                String linkText = linkElement.text();
+                arrArray = linkText.split("\\s");
+                if (arrArray[0].equals("塘北小区") && arrArray.length > 1) {
                     //拼接字符串，本次查询到的入站时间点
-                    String writeString = dateStr3 + arr[1];
+                    String writeString = dateFilePrefixStr + arrArray[1];
                     /**
                      * 进行入库操作，如果本次入站时间与上次入站时间不一致
                      */
                     if (!writeString.equals(flagStr)) {
+                        //标志位：更新
                         flagStr = writeString;
-                        file = new File(".\\1.txt");
-                        fileWriterVar = new FileWriter(file.getName(), true);
+                        fileVar = new File(fileNameStr);
+                        fileWriterVar = new FileWriter(fileVar.getName(), true);
                         bufferWriterVar = new BufferedWriter(fileWriterVar);
                         bufferWriterVar.write(writeString + "\n");
                         bufferWriterVar.close();
                         System.out.println("Debug flagInt = " + flagStr);
                         break;
                     }
-                } else if (arr[0].equals("塘北小区") && arr.length == 1) {
+                } else if (arrArray[0].equals("塘北小区") && arrArray.length == 1) {
                     break;
                 }
             }
-            currentTimeLong = sdf5.parse(sdf5.format(new Date())).getTime();
+            //更新当前时间变量
+            currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(new Date())).getTime();
+            System.out.println("Debug: print");
             sleep(60000);
         }
+    }
+}
+
+public class StatisticTime {
+    public static void main(String[] args) throws InterruptedException, ParseException, IOException {
+        Statistic statisticObject = new Statistic();
+        statisticObject.StatisticTimeWay("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt");
     }
 }
