@@ -52,7 +52,7 @@ public class StatisticTime {
 
         while (currentTimeLong > beginTimeLong && currentTimeLong < endTimeLong) {
 
-            Document doc;
+            Document doc = null;
             //标志位，如果执行出现异常，则进行重度
             boolean flag = true;
             while (flag){
