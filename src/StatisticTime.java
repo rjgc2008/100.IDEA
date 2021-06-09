@@ -37,8 +37,9 @@ class Statistic extends Thread {
     //获取当前日期时间
     private Date currentDate = new Date();
     private SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
-
     private SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
+    private SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     //获取开始时间、结束时间拼接字符串前缀
     private String datePrefixStr = ymdSDF.format(currentDate);
     //拼接开始时间字符串
@@ -48,7 +49,6 @@ class Statistic extends Thread {
     //写入文件里的内容的字符串前缀
     private String dateFilePrefixStr = ymdeSDF.format(currentDate);
 
-    private SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private long beginTimeLong = 0;
     private long endTimeLong = 0;
     private long currentTimeLong = 0;
@@ -84,21 +84,24 @@ class Statistic extends Thread {
         }
 
         while (currentTimeLong > beginTimeLong && currentTimeLong < endTimeLong) {
+            //标志位置true，确保每次都查询获取一次html文件
             flag = true;
-            while (flag) {
-                try {
-                    //网络获取html文件
-                    doc = Jsoup.connect(urlStr).get();
-                    flag = false;
-                } catch (Exception e) {
-                    System.out.println("debug: 运行异常");
+            try {
+                while (flag) {
                     try {
+                        //网络获取html文件
+                        doc = Jsoup.connect(urlStr).get();
+                        flag = false;
+                    } catch (Exception e) {
+                        System.out.println("debug: 运行异常");
+                        //若出现异常后，停止30S，标志位不做任何处理，目的是30S后重新查询一次
                         sleep(30000);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
                     }
                 }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
             }
+
 //            从本地获取文件
 //            File input = new File("D:\\200WYJ\\999.tmp\\013.html\\input.html");
 //            Document doc = Jsoup.parse(input, "UTF-8", "");
@@ -111,15 +114,14 @@ class Statistic extends Thread {
                 linkElement = linksElements.get(i);
                 String linkText = linkElement.text();
                 arrArray = linkText.split("\\s");
-//                System.out.println("Debug: i = " + i + " filename = " + fileNameStr + " , currentTime is " + ymdhmsSDF.format(new Date()) + " , linkText = " + linkText + " ,allArray.length = " + arrArray.length);
-                if (arrArray[0].equals(siteName) && arrArray.length > 1) {
+                if (arrArray[0].equals(siteName) && arrArray.length == 2) {
                     //拼接字符串，本次查询到的入站时间点
-                    String writeString = dateFilePrefixStr + arrArray[1];
+                    String writeString = siteName + " " + dateFilePrefixStr + arrArray[1];
                     /**
-                     * 进行入库操作，如果本次入站时间与上次入站时间不一致
+                     * 进行写入文件操作，如果本次入站时间与上次入站时间不一致
                      */
                     if (!writeString.equals(flagStr)) {
-                        //标志位：更新
+                        //标志位：更新，确保不重复写入相同时间点的信息
                         flagStr = writeString;
                         try {
                             fileVar = new File(fileNameStr);
@@ -130,24 +132,20 @@ class Statistic extends Thread {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        System.out.println("Debug siteName = " + siteName + " , filename = " + fileNameStr);
                         break;
                     }
-                } else if (arrArray[0].equals(siteName) && arrArray.length == 1) {
+                } else if (arrArray[0].equals(siteName)) {
                     break;
                 }
             }
-            //更新当前时间变量
+            //更新当前时间变量，确保时间点在判断范围内
             try {
                 currentTimeLong = ymdhmsSDF.parse(ymdhmsSDF.format(new Date())).getTime();
+                sleep(60000);
             } catch (ParseException e) {
                 e.printStackTrace();
-            }
-//            System.out.println("Debug: print, currenttime is " + ymdhmsSDF.format(new Date()));
-            try {
-                sleep(30000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            }catch (InterruptedException ex) {
+                ex.printStackTrace();
             }
         }
     }
@@ -156,6 +154,6 @@ class Statistic extends Thread {
 public class StatisticTime {
     public static void main(String[] args) throws InterruptedException, ParseException, IOException {
         new Statistic("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt", "塘北小区").start();
-        new Statistic("http://szxing-fwc.icitymobile.com/line/10000585", "138.txt","东振路东").start();
+        new Statistic("http://szxing-fwc.icitymobile.com/line/10000585", "138.txt", "东振路东").start();
     }
 }
