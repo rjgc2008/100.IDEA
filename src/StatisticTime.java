@@ -35,35 +35,34 @@ class Statistic extends Thread {
     private boolean flag = true;
 
     //获取当前日期时间
-    Date currentDate = new Date();
-    SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
+    private Date currentDate = new Date();
+    private SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
 
-    SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
+    private SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
     //获取开始时间、结束时间拼接字符串前缀
-    String datePrefixStr = ymdSDF.format(currentDate);
+    private String datePrefixStr = ymdSDF.format(currentDate);
     //拼接开始时间字符串
-    String startTimeStr = datePrefixStr + "06:00:00";
+    private String startTimeStr = datePrefixStr + "06:00:00";
     //拼接结束时间字符串
-    String endTimeStr = datePrefixStr + "22:00:00";
+    private String endTimeStr = datePrefixStr + "22:00:00";
     //写入文件里的内容的字符串前缀
-    String dateFilePrefixStr = ymdeSDF.format(currentDate);
+    private String dateFilePrefixStr = ymdeSDF.format(currentDate);
 
-    SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    long beginTimeLong = 0;
-    long endTimeLong = 0;
-    long currentTimeLong = 0;
+    private SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private long beginTimeLong = 0;
+    private long endTimeLong = 0;
+    private long currentTimeLong = 0;
 
+    private Document doc = null;
 
-    Document doc = null;
+    private Element contentElement = null;
+    private Elements linksElements = null;
+    private Element linkElement = null;
+    private String[] arrArray = null;
 
-    Element contentElement = null;
-    Elements linksElements = null;
-    Element linkElement = null;
-    String[] arrArray = null;
-
-    File fileVar = null;
-    FileWriter fileWriterVar = null;
-    BufferedWriter bufferWriterVar = null;
+    private File fileVar = null;
+    private FileWriter fileWriterVar = null;
+    private BufferedWriter bufferWriterVar = null;
 
     public Statistic(String urlStr, String fileNameStr, String siteName) {
         this.urlStr = urlStr;
@@ -112,7 +111,7 @@ class Statistic extends Thread {
                 linkElement = linksElements.get(i);
                 String linkText = linkElement.text();
                 arrArray = linkText.split("\\s");
-                System.out.println("Debug: i = " + i + " filename = " + fileNameStr + " , currentTime is " + ymdhmsSDF.format(new Date()) + " , linkText = " + linkText + " ,allArray.length = " + arrArray.length);
+//                System.out.println("Debug: i = " + i + " filename = " + fileNameStr + " , currentTime is " + ymdhmsSDF.format(new Date()) + " , linkText = " + linkText + " ,allArray.length = " + arrArray.length);
                 if (arrArray[0].equals(siteName) && arrArray.length > 1) {
                     //拼接字符串，本次查询到的入站时间点
                     String writeString = dateFilePrefixStr + arrArray[1];
@@ -131,7 +130,7 @@ class Statistic extends Thread {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        System.out.println("Debug flagInt = " + flagStr);
+                        System.out.println("Debug siteName = " + siteName + " , filename = " + fileNameStr);
                         break;
                     }
                 } else if (arrArray[0].equals(siteName) && arrArray.length == 1) {
