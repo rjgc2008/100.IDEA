@@ -22,35 +22,57 @@ import java.util.Date;
  */
 class Statistic extends Thread {
 
-    String urlStr = "";
-    String fileNameStr = "";
+    //变量，记录网页的URL
+    private String urlStr = "";
+    //变量，记录存储文件的文件名
+    private String fileNameStr = "";
+    //变量，记录站点名称
+    private String siteName = "";
 
-    public Statistic(String urlStr, String fileNameStr) {
+    //标识符：用于判断是否将时间写入文件
+    private String flagStr = "";
+    //标识符：用于若网络获取文件出现异常，则进行重试
+    private boolean flag = true;
+
+    //获取当前日期时间
+    Date currentDate = new Date();
+    SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
+
+    SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
+    //获取开始时间、结束时间拼接字符串前缀
+    String datePrefixStr = ymdSDF.format(currentDate);
+    //拼接开始时间字符串
+    String startTimeStr = datePrefixStr + "06:00:00";
+    //拼接结束时间字符串
+    String endTimeStr = datePrefixStr + "22:00:00";
+    //写入文件里的内容的字符串前缀
+    String dateFilePrefixStr = ymdeSDF.format(currentDate);
+
+    SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    long beginTimeLong = 0;
+    long endTimeLong = 0;
+    long currentTimeLong = 0;
+
+
+    Document doc = null;
+
+    Element contentElement = null;
+    Elements linksElements = null;
+    Element linkElement = null;
+    String[] arrArray = null;
+
+    File fileVar = null;
+    FileWriter fileWriterVar = null;
+    BufferedWriter bufferWriterVar = null;
+
+    public Statistic(String urlStr, String fileNameStr, String siteName) {
         this.urlStr = urlStr;
         this.fileNameStr = fileNameStr;
+        this.siteName = siteName;
     }
 
     @Override
     public void run() {
-        //标识符：用于判断是否将时间写入文件
-        String flagStr = "";
-        //标识符：用于若网络获取文件出现异常，则进行重试
-        boolean flag = true;
-
-        //获取当前日期时间
-        Date currentDate = new Date();
-        SimpleDateFormat ymdSDF = new SimpleDateFormat("yyyy-MM-dd ");
-        //获取开始时间、结束时间拼接字符串前缀
-        String datePrefixStr = ymdSDF.format(currentDate);
-        //拼接开始时间字符串
-        String startTimeStr = datePrefixStr + "06:00:00";
-        //拼接结束时间字符串
-        String endTimeStr = datePrefixStr + "22:00:00";
-
-        SimpleDateFormat ymdhmsSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        long beginTimeLong = 0;
-        long endTimeLong = 0;
-        long currentTimeLong = 0;
         try {
             //获取开始时间Long类型
             beginTimeLong = ymdhmsSDF.parse(startTimeStr).getTime();
@@ -62,25 +84,11 @@ class Statistic extends Thread {
             System.out.println("ERROR: Exception");
         }
 
-        SimpleDateFormat ymdeSDF = new SimpleDateFormat("yyyy-MM-dd E ");
-        //写入文件里的内容的字符串前缀
-        String dateFilePrefixStr = ymdeSDF.format(currentDate);
-        Document doc = null;
-
-        Element contentElement = null;
-        Elements linksElements = null;
-        Element linkElement = null;
-        String[] arrArray = null;
-
-        File fileVar = null;
-        FileWriter fileWriterVar = null;
-        BufferedWriter bufferWriterVar = null;
-
         while (currentTimeLong > beginTimeLong && currentTimeLong < endTimeLong) {
+            flag = true;
             while (flag) {
                 try {
                     //网络获取html文件
-//                    doc = Jsoup.connect("http://szxing-fwc.icitymobile.com/line/10003091").get();
                     doc = Jsoup.connect(urlStr).get();
                     flag = false;
                 } catch (Exception e) {
@@ -92,8 +100,6 @@ class Statistic extends Thread {
                     }
                 }
             }
-//                调试语句
-//            System.out.println("Debug: doc1" + doc.getElementById("content").getElementsByTag("a").get(10).text());
 //            从本地获取文件
 //            File input = new File("D:\\200WYJ\\999.tmp\\013.html\\input.html");
 //            Document doc = Jsoup.parse(input, "UTF-8", "");
@@ -106,7 +112,8 @@ class Statistic extends Thread {
                 linkElement = linksElements.get(i);
                 String linkText = linkElement.text();
                 arrArray = linkText.split("\\s");
-                if (arrArray[0].equals("塘北小区") && arrArray.length > 1) {
+                System.out.println("Debug: i = " + i + " filename = " + fileNameStr + " , currentTime is " + ymdhmsSDF.format(new Date()) + " , linkText = " + linkText + " ,allArray.length = " + arrArray.length);
+                if (arrArray[0].equals(siteName) && arrArray.length > 1) {
                     //拼接字符串，本次查询到的入站时间点
                     String writeString = dateFilePrefixStr + arrArray[1];
                     /**
@@ -127,7 +134,7 @@ class Statistic extends Thread {
                         System.out.println("Debug flagInt = " + flagStr);
                         break;
                     }
-                } else if (arrArray[0].equals("塘北小区") && arrArray.length == 1) {
+                } else if (arrArray[0].equals(siteName) && arrArray.length == 1) {
                     break;
                 }
             }
@@ -137,9 +144,9 @@ class Statistic extends Thread {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            System.out.println("Debug: print");
+//            System.out.println("Debug: print, currenttime is " + ymdhmsSDF.format(new Date()));
             try {
-                sleep(60000);
+                sleep(30000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -149,7 +156,7 @@ class Statistic extends Thread {
 
 public class StatisticTime {
     public static void main(String[] args) throws InterruptedException, ParseException, IOException {
-        new Statistic("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt").start();
-        new Statistic("http://szxing-fwc.icitymobile.com/line/10000585", "138.txt").start();
+        new Statistic("http://szxing-fwc.icitymobile.com/line/10003091", "557.txt", "塘北小区").start();
+        new Statistic("http://szxing-fwc.icitymobile.com/line/10000585", "138.txt","东振路东").start();
     }
 }
